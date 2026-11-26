@@ -381,7 +381,7 @@ const TA=(path,label)=>`<div class="fg"><label>${label}</label><textarea data-p=
 
 function drawerBody(c){
   switch(tab){
-  case 'company': return `<div class="h">Identity</div>${F('name','Company name')}${F('person','Greeting name (who is signed in)')}${F('tagline','Tagline')}${F('footerText','Footer line')}${F('pageSubtitle','Brand page subtitle')}${F('feedbackKey','Feedback access key (web3forms.com, delivers to your inbox)','text')}${F('feedbackEmail','Fallback feedback email','text')}
+  case 'company': return `<div class="h">Identity</div>${F('name','Company name')}${F('person','Greeting name (who is signed in)')}${F('tagline','Tagline')}${F('footerText','Footer line')}${F('pageSubtitle','Brand page subtitle')}${F('feedbackKey','Feedback access key (web3forms.com, delivers to your inbox)','text')}${F('feedbackEmail','Feedback email (or FormSubmit alias)','text')}
     <div class="h">Theme</div><div class="row">${Colour('theme.accent','Accent colour')}${Colour('theme.onAccent','Text on accent')}</div><div class="row">${Colour('theme.sky1','Background top')}${Colour('theme.sky2','Background bottom')}</div>
     <div class="h">Help tooltips</div>${['logo','colour','type','elements','imagery'].map(k=>TA('help.'+k,'“?” text — '+k)).join('')}`;
   case 'logo': return `<div class="h">Generated logo</div><p class="hint">The logo is drawn from these settings. Upload real artwork per slot below to replace it.</p>
@@ -474,14 +474,21 @@ function openFeedback(){
   f.addEventListener('submit',async e=>{
     e.preventDefault();
     const msg=f.message.value.trim(); if(!msg){ st.textContent='Please write a message first.'; f.message.focus(); return; }
-    if(!c.feedbackKey){
-      if(c.feedbackEmail){ location.href=`mailto:${c.feedbackEmail}?subject=${encodeURIComponent(c.name+' portal feedback')}&body=${encodeURIComponent(msg)}`; return; }
-      st.textContent='Feedback delivery isn’t set up yet.'; return; }
+    if(!c.feedbackKey&&!c.feedbackEmail){ st.textContent='Feedback delivery isn’t set up yet.'; return; }
+    if(f.botcheck.checked) return;
     btn.disabled=true; st.textContent='Sending…';
     try{
-      const r=await fetch('https://api.web3forms.com/submit',{ method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'},
-        body:JSON.stringify({ access_key:c.feedbackKey, subject:c.name+' portal feedback', from_name:f.name.value.trim()||'Portal visitor', name:f.name.value.trim()||'Anonymous', email:f.email.value.trim()||undefined, message:msg, botcheck:f.botcheck.checked, page:location.href }) });
-      const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.message||'failed');
+      const nm=f.name.value.trim()||'Portal visitor', em=f.email.value.trim();
+      let r,j;
+      if(c.feedbackKey){ /* Web3Forms access key */
+        r=await fetch('https://api.web3forms.com/submit',{ method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'},
+          body:JSON.stringify({ access_key:c.feedbackKey, subject:c.name+' portal feedback', from_name:nm, name:nm, email:em||undefined, message:msg, botcheck:false, page:location.href }) });
+        j=await r.json(); if(!r.ok||!j.success) throw new Error(j.message||'failed');
+      } else { /* FormSubmit: feedbackEmail is an email address or the random alias FormSubmit issues */
+        r=await fetch('https://formsubmit.co/ajax/'+encodeURIComponent(c.feedbackEmail),{ method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'},
+          body:JSON.stringify({ name:nm, email:em||undefined, message:msg, page:location.href, _subject:c.name+' portal feedback', _replyto:em||undefined, _template:'table', _captcha:'false' }) });
+        j=await r.json(); if(!r.ok||String(j.success)==='false') throw new Error(j.message||'failed');
+      }
       f.innerHTML='<button type="button" class="fbx" aria-label="Close">×</button><h3>Thank you</h3><p>Your feedback has been sent.</p><div class="fbrow"><span></span><button type="button" class="hbtn fbsend fbx">Close</button></div>';
     }catch(err){ btn.disabled=false; st.textContent='Couldn’t send. Please try again in a moment.'; }
   });
