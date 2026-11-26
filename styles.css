@@ -207,3 +207,15 @@ a{color:inherit}
 .fbrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}.fbstat{font-size:13px;color:#8a3b2b}
 .fbbox .fbsend{background:var(--accent,#1F2A1F);color:var(--onAccent,#ECE7DB);border:0;padding:9px 22px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;position:static}
 .fbbox .fbsend:disabled{opacity:.6;cursor:wait}
+
+/* editable letterhead */
+.shtabs{margin-bottom:10px}.shtabs button{padding:10px 4px}
+.shbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;font:600 8px var(--heading-font);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}.shbar span{margin-right:6px}
+.shact{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.tphint{font-size:11px;line-height:1.5;color:var(--mute);margin:14px 0 0}
+.a4zoom{zoom:.8;width:794px;max-width:none}
+.ed{cursor:text;border-radius:2px}.ed:hover{background:rgba(120,120,120,.12)}.ed:focus,.edb:focus-within [data-s]:focus{outline:1px dashed #9a9a92}
+.ed:empty:before{content:"add text";color:#bbb}
+.edb [data-s]:hover{background:rgba(120,120,120,.08)}
+.tpcard.paper{overflow:auto}
+@media (max-width:1100px){.a4zoom{zoom:.6}}

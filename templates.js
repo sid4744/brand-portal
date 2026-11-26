@@ -63,28 +63,44 @@ function hub(c){
 
 /* ================================================================== documents (letterhead) */
 const DET = c => Object.assign({ address:'Street and number\nPostcode City\nCountry', phone:'+00 0 0000 0000', email:'hello@example.com', web:'example.com', legal:'Company number 00000000', date:'12 November 2026', recipient:'Recipient name\nCompany\nStreet and number\nPostcode City', salutation:'Dear Name,' }, D(c).details||{});
-function sheet(c,kind){
+const S1='Thank you for your time during our meeting last week. As agreed, we enclose our proposal for the work we discussed, including scope, timing and the people involved.';
+const S2='The proposal is valid for thirty days. Should you wish to adjust the scope or the schedule, please contact us directly. We look forward to hearing from you.';
+const BLK_DEF=(c,kind)=>{ const k=T(c), d=DET(c), P=t=>({s:'p',t});
+  if(kind==='head') return [P('')];
+  if(kind==='cont') return [P(S1),P(S2)];
+  if(kind==='letter') return [{s:'h2',t:'Proposal and next steps'},P(d.salutation),P(S1),P(S2),P('Kind regards,'),P((c.person||'')+'\n'+c.name)];
+  return [{s:'t',t:c.name},{s:'l',t:k.tag},{s:'h1',t:'Introduction'},P(S1),P(S2),{s:'h1',t:'Approach'},P('Each section starts with a plain heading and a short paragraph. Names, places and dates are written out in full.'),{s:'h1',t:'Next steps'},P('Name the place, name the maker and number the batch.')]; };
+const BLK=(c,kind)=>(D(c).blocks&&D(c).blocks[kind])||BLK_DEF(c,kind);
+/* edit=true makes every text on the sheet editable in place (details are shared with the form on the left) */
+function sheet(c,kind,edit){
   const k=T(c), d=DET(c), logo=imgOf(c,'horizontal','black'), sym=imgOf(c,'symbol','black');
+  const ef=(key,t)=> edit?`<span contenteditable="plaintext-only" spellcheck="false" class="ed" data-ed="details:${key}" style="white-space:pre-line">${esc(t)}</span>`:nl(t);
+  const css=`<style>.a4 [data-s]{margin:0 0 12px;white-space:pre-line;outline:none}.a4 [data-s=t]{font:500 36px/1.1 ${k.head};margin-bottom:10px}.a4 [data-s=l]{font:500 9px/1.7 ${k.mono};letter-spacing:.2em;color:${k.acc};text-transform:uppercase;margin-bottom:28px}.a4 [data-s=h1]{font:500 20px/1.3 ${k.head};margin:22px 0 8px}.a4 [data-s=h2]{font:600 12px/1.5 ${k.head};text-transform:uppercase;letter-spacing:.06em;margin:0 0 14px}</style>`;
+  const blocks=`<div ${edit?`contenteditable="true" spellcheck="true" data-blocks="${kind}" class="edb"`:''}>${BLK(c,kind).map(b=>`<div data-s="${b.s}">${esc(b.t)||'<br>'}</div>`).join('')}</div>`;
   const foot=`<div style="position:absolute;left:64px;right:64px;bottom:48px;display:flex;justify-content:space-between;align-items:flex-end;font:500 9px/1.6 ${k.mono};letter-spacing:.06em;color:${k.grey}">
-    <div style="font:600 13px/1.25 ${k.head};letter-spacing:.04em;color:${k.ink};text-transform:uppercase;max-width:200px">${esc(k.tag)}</div><div style="text-align:right">${nl(d.legal)}<br>${esc(d.web)}</div></div>`;
-  const body=`<p>Thank you for your time during our meeting last week. As agreed, we enclose our proposal for the work we discussed, including scope, timing and the people involved.</p><p>The proposal is valid for thirty days. Should you wish to adjust the scope or the schedule, please contact us directly. We look forward to hearing from you.</p><p>Kind regards,</p><p>${esc(c.person)}<br>${esc(c.name)}</p>`;
+    <div style="font:600 13px/1.25 ${k.head};letter-spacing:.04em;color:${k.ink};text-transform:uppercase;max-width:200px">${esc(k.tag)}</div><div style="text-align:right">${ef('legal',d.legal)}<br>${ef('web',d.web)}</div></div>`;
   const top = kind==='cont' ? `<img src="${sym}" style="position:absolute;right:64px;top:56px;height:44px">`
-    : `<img src="${logo}" style="position:absolute;left:64px;top:56px;height:42px"><div style="position:absolute;right:64px;top:58px;text-align:right;font:500 9px/1.7 ${k.mono};letter-spacing:.06em;color:${k.grey}">${nl(d.address)}<br>${esc(d.phone)}<br>${esc(d.email)}</div>`;
+    : `<img src="${logo}" style="position:absolute;left:64px;top:56px;height:42px"><div style="position:absolute;right:64px;top:58px;text-align:right;font:500 9px/1.7 ${k.mono};letter-spacing:.06em;color:${k.grey}">${ef('address',d.address)}<br>${ef('phone',d.phone)}<br>${ef('email',d.email)}</div>`;
+  const wrap=(t,inner)=>`<div style="position:absolute;left:64px;right:64px;top:${t}px;font:400 12px/1.7 ${k.body};color:${k.ink}">${inner}</div>`;
   let mid='';
-  if(kind==='letter') mid=`<div style="position:absolute;left:64px;right:64px;top:190px;font:400 12px/1.7 ${k.body};color:${k.ink}"><div style="font:500 9px/1.7 ${k.mono};letter-spacing:.06em;color:${k.grey};text-align:right">${esc(d.date)}</div><p style="margin:26px 0 40px">${nl(d.recipient)}</p><p style="font:600 12px ${k.head};text-transform:uppercase;letter-spacing:.06em;margin:0 0 14px">Proposal and next steps</p><p>${esc(d.salutation)}</p>${body}</div>`;
-  if(kind==='doc') mid=`<div style="position:absolute;left:64px;right:64px;top:190px;font:400 12px/1.7 ${k.body};color:${k.ink}"><div style="font:500 36px/1.1 ${k.head};margin-bottom:10px">${esc(c.name)}</div><div style="font:500 9px/1.7 ${k.mono};letter-spacing:.2em;color:${k.acc};text-transform:uppercase;margin-bottom:28px">${esc(k.tag)}</div><h3 style="font:500 20px ${k.head};margin:0 0 8px">Introduction</h3>${body.split('<p>Kind')[0]}<h3 style="font:500 20px ${k.head};margin:22px 0 8px">Approach</h3><p>Each section starts with a plain heading and a short paragraph. Names, places and dates are written out in full.</p></div>`;
-  if(kind==='cont') mid=`<div style="position:absolute;left:64px;right:64px;top:150px;font:400 12px/1.7 ${k.body};color:${k.ink}">${body.split('<p>Kind')[0]}</div>`;
-  return `<div class="a4" style="position:relative;width:794px;height:1123px;background:#fff;overflow:hidden;font-family:${k.body}">${top}${mid}${foot}</div>`;
+  if(kind==='letter') mid=wrap(190,`<div style="font:500 9px/1.7 ${k.mono};letter-spacing:.06em;color:${k.grey};text-align:right">${ef('date',d.date)}</div><p style="margin:26px 0 40px">${ef('recipient',d.recipient)}</p>${blocks}`);
+  else mid=wrap(kind==='cont'?150:190,blocks);
+  return css+`<div class="a4" style="position:relative;width:794px;height:1123px;background:#fff;overflow:hidden;font-family:${k.body}">${top}${mid}${foot}</div>`;
 }
-const SHEETS=[['head','Letterhead','Word template','.docx','Download'],['letter','Example letter','Word template','.docx','Open'],['cont','Continuation sheet','Word template','.docx','Download'],['doc','Example document','Word template','.docx','Open']];
+const SHEETS=[['head','Letterhead'],['letter','Letter'],['cont','Continuation'],['doc','Document']];
+const curSheet=()=>S.sheet||'head';
+const sheetPv=c=>`<div class="a4zoom">${sheet(c,curSheet(),true)}</div>`;
 function letterhead(c){
-  const d=DET(c);
+  const d=DET(c), cur=curSheet();
+  const fm=[['p','Text'],['t','Title'],['h1','Heading'],['h2','Subheading'],['l','Label']];
   return chrome(c,'letterhead',`<div class="tpcols two"><aside class="tpcard"><h6><i>1</i> Company details</h6>
       ${fld('details','address','Address',d.address,'ta')}${fld('details','phone','Phone',d.phone)}${fld('details','email','E-mail',d.email)}${fld('details','web','Website',d.web)}${fld('details','legal','Legal line',d.legal,'ta')}
-      <h6 style="margin-top:18px"><i>2</i> Example letter</h6>${fld('details','date','Date',d.date)}${fld('details','recipient','Recipient',d.recipient,'ta')}${fld('details','salutation','Salutation',d.salutation)}</aside>
-    <section><div class="docs" id="tp-pv">${docsHtml(c)}</div></section></div>`);
+      <p class="tphint">Click any text on the page to edit it. Details you change here and on the page stay in sync.</p></aside>
+    <section><div class="seg shtabs">${SHEETS.map(([k,t])=>`<button type="button" data-sheet="${k}" class="${cur===k?'on':''}">${t}</button>`).join('')}</div>
+      <div class="shbar"><span>Style of the selected paragraph</span>${fm.map(([k,t])=>`<button type="button" class="tbtn" data-fmt="${k}">${t}</button>`).join('')}</div>
+      <div class="tpcard paper" id="tp-pv">${sheetPv(c)}</div>
+      <div class="shact"><button class="tbtn" data-doc="dl:${cur}">Download .docx</button><button class="tbtn" data-doc="open:${cur}">Open / print preview</button><button class="tlink" data-doc="reset:${cur}">Reset this sheet</button></div></section></div>`);
 }
-const docsHtml = c => SHEETS.map(([k,t,m,f,a])=>`<div class="doc"><div class="dthumb"><div class="dscale">${sheet(c,k)}</div></div><div class="dmeta"><b>${t}</b><span>${m}</span><em>${f}</em></div><div class="dact"><button class="tlink" data-doc="open:${k}">Open</button><button class="tlink" data-doc="dl:${k}">Download .docx</button></div></div>`).join('');
 function pageHtml(c,inner,title){ const k=T(c); return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title>${fontLink()}<style>body{margin:0;background:#e9e9e6}.a4{margin:24px auto;box-shadow:0 2px 12px rgba(0,0,0,.18)}@page{size:A4;margin:0}@media print{body{background:#fff}.a4{margin:0;box-shadow:none}}</style></head><body>${inner}</body></html>`; }
 
 /* ================================================================== signature */
@@ -261,40 +277,48 @@ async function logoPng(c,layout,way){
   try{ const s=H.logoSource(c,layout,way); const blob = s.png ? await (await fetch(s.png)).blob() : await H.svgToPng(s.svg,3);
     const bmp=await createImageBitmap(blob); return { data:new Uint8Array(await blob.arrayBuffer()), w:bmp.width, h:bmp.height }; }catch(e){ return null; }
 }
+/* The Word file mirrors the on-screen sheet measurement for measurement: 1 CSS px = 15 twips (A4 at 96 dpi),
+   font px x 1.5 = half-points, and every line height is set exactly like the preview's CSS line-height. */
 async function docx(c,kind){
   const k=T(c), d=DET(c), NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
   const head=firstFont(k.head), body=firstFont(k.body), mono=firstFont(k.mono), ink=hx(k.ink), acc=hx(k.acc), grey=hx(k.grey);
+  const px=n=>Math.round(n*15), hp=n=>Math.max(2,Math.round(n*1.5));
   const run=(t,o={})=>`<w:r><w:rPr>${o.font?`<w:rFonts w:ascii="${o.font}" w:hAnsi="${o.font}" w:cs="${o.font}"/>`:''}${o.b?'<w:b/>':''}${o.caps?'<w:caps/>':''}${o.color?`<w:color w:val="${o.color}"/>`:''}${o.sp?`<w:spacing w:val="${o.sp}"/>`:''}${o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:''}</w:rPr><w:t xml:space="preserve">${xe(t)}</w:t></w:r>`;
   const lines=(t,o)=>String(t).split('\n').map((l,i)=>(i?'<w:r><w:br/></w:r>':'')+run(l,o)).join('');
-  const para=(inner,o={})=>`<w:p><w:pPr>${o.style?`<w:pStyle w:val="${o.style}"/>`:''}${o.keep?'<w:keepNext/>':''}${o.after!=null?`<w:spacing w:after="${o.after}"/>`:''}${o.jc?`<w:jc w:val="${o.jc}"/>`:''}</w:pPr>${inner}</w:p>`;
+  const para=(inner,o={})=>`<w:p><w:pPr>${o.style?`<w:pStyle w:val="${o.style}"/>`:''}${o.keep?'<w:keepNext/>':''}<w:spacing w:before="${o.before||0}" w:after="${o.after==null?0:o.after}" w:line="${o.line||240}" w:lineRule="${o.line?'exact':'auto'}"/>${o.jc?`<w:jc w:val="${o.jc}"/>`:''}${o.tiny?'<w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr>':''}</w:pPr>${inner}</w:p>`;
   const img=(rid,id,cx,cy)=>`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="Logo ${id}" descr="${xe(c.name)} logo"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${id}" name="logo${id}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
-  const table=(l,r,w1,w2)=>`<w:tbl><w:tblPr><w:tblW w:w="${w1+w2}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="${w1}"/><w:gridCol w:w="${w2}"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:w="${w1}" w:type="dxa"/></w:tcPr>${l}</w:tc><w:tc><w:tcPr><w:tcW w:w="${w2}" w:type="dxa"/><w:vAlign w:val="bottom"/></w:tcPr>${r}</w:tc></w:tr></w:tbl>`;
-  const small={font:mono,sz:15,color:grey,sp:10};
+  const table=(l,r,w1,w2,va)=>`<w:tbl><w:tblPr><w:tblW w:w="${w1+w2}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="${w1}"/><w:gridCol w:w="${w2}"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:w="${w1}" w:type="dxa"/><w:vAlign w:val="${va}"/></w:tcPr>${l}</w:tc><w:tc><w:tcPr><w:tcW w:w="${w2}" w:type="dxa"/><w:vAlign w:val="${va}"/></w:tcPr>${r}</w:tc></w:tr></w:tbl>`;
+  // preview: mono 9px, letter-spacing .06em, grey; header lines 1.7, footer lines 1.6
+  const small={font:mono,sz:hp(9),color:grey,sp:Math.round(9*.06*15)};
   const files=[]; const rels=[]; let rid=0;
   const addImg=async(layout,heightPx)=>{ const p=await logoPng(c,layout,'black'); if(!p) return null; const n=++rid, name=`media/logo${n}.png`; files.push({name:'word/'+name,data:p.data}); rels.push(`<Relationship Id="rId${n}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${name}"/>`);
     const cy=Math.round(heightPx*9525); return img('rId'+n,n,Math.round(cy*p.w/p.h),cy); };
-  // ---- header: logo left, contact right (continuation sheets: small symbol on the right)
+  // ---- header: logo 42px left at 56px from the top, contact lines 9px / 1.7 right, 2px lower (continuation: 44px symbol right)
   let hdr;
-  if(kind==='cont'){ const im=await addImg('symbol',44); hdr=para(im||run(c.name,{font:head,b:true}),{jc:'right',after:0}); }
+  if(kind==='cont'){ const im=await addImg('symbol',44); hdr=para(im||run(c.name,{font:head,b:true}),{jc:'right'}); }
   else { const im=await addImg('horizontal',42), addr=d.address.split('\n').concat([d.phone,d.email]).join('\n');
-    hdr=table(para(im||run(c.name,{font:head,b:true,sz:32}),{after:0}),para(lines(addr,small),{jc:'right',after:0}),5000,4638)+para('',{after:0}); }
-  const ftr=table(para(run(k.tag,{font:head,b:true,caps:true,sz:22,color:ink,sp:10}),{after:0}),para(lines(d.legal+'\n'+d.web,small),{jc:'right',after:0}),5000,4638)+para('',{after:0});
-  // ---- body
-  const P=t=>para(run(t),{});
-  const sample='Thank you for your time during our meeting last week. As agreed, we enclose our proposal for the work we discussed, including scope, timing and the people involved.';
-  const sample2='The proposal is valid for thirty days. Should you wish to adjust the scope or the schedule, please contact us directly. We look forward to hearing from you.';
-  let main='';
-  if(kind==='head') main=para('',{})+para('',{});
-  if(kind==='cont') main=P(sample)+P(sample2);
-  if(kind==='letter') main=para(run(d.date,small),{jc:'right',after:360})+para(lines(d.recipient,{}),{after:480})+para(run('Proposal and next steps'),{style:'Heading2'})+P(d.salutation)+P(sample)+P(sample2)+P('Kind regards,')+para(lines(c.person+'\n'+c.name,{}),{});
-  if(kind==='doc') main=para(run(c.name),{style:'Title'})+para(run(k.tag),{style:'Label'})+para(run('Introduction'),{style:'Heading1'})+P(sample)+P(sample2)+para(run('Approach'),{style:'Heading1'})+P('Each section starts with a plain heading and a short paragraph. Names, places and dates are written out in full.')+para(run('Next steps'),{style:'Heading1'})+P('Name the place, name the maker and number the batch.');
-  const sect='<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:footerReference w:type="default" r:id="rIdFtr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="2268" w:right="1134" w:bottom="1700" w:left="1134" w:header="850" w:footer="680" w:gutter="0"/></w:sectPr>';
-  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${NS}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${body}" w:hAnsi="${body}" w:cs="${body}" w:eastAsia="${body}"/><w:color w:val="${ink}"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-GB"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="312" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+    hdr=table(para(im||run(c.name,{font:head,b:true,sz:hp(24)}),{}),para(lines(addr,small),{jc:'right',before:px(2),line:px(15.3)}),5000,4986,'top')+para('',{line:20,tiny:true}); }
+  // ---- footer: tagline 13px / 600 / caps / +.04em on the left, legal and web on the right, both resting on the bottom line
+  const ftr=table(para(run(k.tag,{font:head,b:true,caps:true,sz:hp(13),color:ink,sp:Math.round(13*.04*15)}),{line:px(16.25)}),para(lines(d.legal+'\n'+d.web,small),{jc:'right',line:px(14.4)}),3000,6986,'bottom')+para('',{line:20,tiny:true});
+  // ---- body: every paragraph gets the preview's own margins (CSS margins collapse, so before = max(0, top - previous bottom))
+  const SPEC={ p:{mt:0,mb:12,lh:20.4}, t:{mt:0,mb:10,lh:39.6,style:'Title'}, l:{mt:0,mb:28,lh:15.3,style:'Label'}, h1:{mt:22,mb:8,lh:26,style:'Heading1'}, h2:{mt:0,mb:14,lh:18,style:'Heading2'} };
+  SPEC.h2.style='Heading2';
+  let prev=null, main='';
+  if(kind==='letter'){
+    main+=para(run(d.date,small),{jc:'right',line:px(15.3)});
+    main+=para(lines(d.recipient,{}),{before:px(26),after:px(40),line:px(20.4)}); prev=40;
+  }
+  BLK(c,kind).forEach(b=>{ const sp=SPEC[b.s]||SPEC.p; const before=sp.mt; /* Word already uses the larger of space-after / space-before (like CSS margin collapse), so no subtraction */
+    main+=para(lines(b.t,{}),{style:sp.style,before:px(before),after:px(sp.mb),line:px(sp.lh)}); prev=sp.mb; });
+  const top=kind==='cont'?px(150):px(190);
+  const sect=`<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:footerReference w:type="default" r:id="rIdFtr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${top}" w:right="${px(64)}" w:bottom="1700" w:left="${px(64)}" w:header="${px(56)}" w:footer="${px(48)}" w:gutter="0"/></w:sectPr>`;
+  const F=f=>`<w:rFonts w:ascii="${f}" w:hAnsi="${f}" w:cs="${f}"/>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${NS}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${body}" w:hAnsi="${body}" w:cs="${body}" w:eastAsia="${body}"/><w:color w:val="${ink}"/><w:sz w:val="${hp(12)}"/><w:szCs w:val="${hp(12)}"/><w:lang w:val="en-GB"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:before="0" w:after="${px(12)}" w:line="${px(20.4)}" w:lineRule="exact"/></w:pPr></w:pPrDefault></w:docDefaults>
    <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
-   <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/></w:pPr><w:rPr><w:rFonts w:ascii="${head}" w:hAnsi="${head}" w:cs="${head}"/><w:sz w:val="72"/><w:szCs w:val="72"/></w:rPr></w:style>
-   <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="360" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:rFonts w:ascii="${head}" w:hAnsi="${head}" w:cs="${head}"/><w:sz w:val="44"/><w:szCs w:val="44"/></w:rPr></w:style>
-   <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:rFonts w:ascii="${head}" w:hAnsi="${head}" w:cs="${head}"/><w:b/><w:caps/><w:spacing w:val="20"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:style>
-   <w:style w:type="paragraph" w:customStyle="1" w:styleId="Label"><w:name w:val="Label"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:rFonts w:ascii="${mono}" w:hAnsi="${mono}" w:cs="${mono}"/><w:caps/><w:color w:val="${acc}"/><w:spacing w:val="40"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:style></w:styles>`;
+   <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="0" w:after="${px(10)}" w:line="${px(39.6)}" w:lineRule="exact"/></w:pPr><w:rPr>${F(head)}<w:sz w:val="${hp(36)}"/><w:szCs w:val="${hp(36)}"/></w:rPr></w:style>
+   <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="${px(22)}" w:after="${px(8)}" w:line="${px(26)}" w:lineRule="exact"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr>${F(head)}<w:sz w:val="${hp(20)}"/><w:szCs w:val="${hp(20)}"/></w:rPr></w:style>
+   <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="${px(14)}" w:line="${px(18)}" w:lineRule="exact"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr>${F(head)}<w:b/><w:caps/><w:spacing w:val="${Math.round(12*.06*15)}"/><w:sz w:val="${hp(12)}"/><w:szCs w:val="${hp(12)}"/></w:rPr></w:style>
+   <w:style w:type="paragraph" w:customStyle="1" w:styleId="Label"><w:name w:val="Label"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="0" w:after="${px(28)}" w:line="${px(15.3)}" w:lineRule="exact"/></w:pPr><w:rPr>${F(mono)}<w:caps/><w:color w:val="${acc}"/><w:spacing w:val="${Math.round(9*.2*15)}"/><w:sz w:val="${hp(9)}"/><w:szCs w:val="${hp(9)}"/></w:rPr></w:style></w:styles>`;
   const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${main}${sect}</w:body></w:document>`;
   const hf=(tag,inner)=>`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${tag} ${NS}>${inner}</w:${tag}>`;
   rels.push('<Relationship Id="rIdSt" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>','<Relationship Id="rIdHdr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>','<Relationship Id="rIdFtr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>');
@@ -304,7 +328,6 @@ async function docx(c,kind){
   add('_rels/.rels',R('<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'));
   add('word/document.xml',doc); add('word/styles.xml',styles); add('word/header1.xml',hf('hdr',hdr)); add('word/footer1.xml',hf('ftr',ftr));
   add('word/_rels/document.xml.rels',R(rels.join('')));
-  // header relationships reuse the same image parts
   add('word/_rels/header1.xml.rels',R(rels.filter(x=>x.includes('/image"')).join('')));
   const b=H.makeZip(files); return new Blob([b],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
 }
@@ -318,7 +341,7 @@ function render(c,sub,helpers){
 }
 function preview(c,sub){
   const id=sub.split('/')[0];
-  if(id==='letterhead') return docsHtml(c);
+  if(id==='letterhead') return sheetPv(c);
   if(id==='signature') return sigHtml(c);
   if(id==='social') return socialPv(c);
   if(id==='collage') return collageBox(c,COL(c),640);
@@ -331,13 +354,19 @@ function refresh(c){ const sub=curSub(), el=$('#tp-pv'); if(el) el.innerHTML=pre
 const objFor=(c,r)=> r==='deckcur'? DECK(c).slides[Math.min(S.slide,DECK(c).slides.length-1)] : rootObj(c,r);
 function openWin(html,print){ const w=window.open('','_blank'); if(!w){ H.toast('Allow pop-ups to open this'); return; } w.document.write(html); w.document.close(); if(print) setTimeout(()=>w.print(),600); }
 
+function saveBlocks(c,host){ const out=[]; host.childNodes.forEach(n=>{ if(n.nodeType===1) out.push({s:n.dataset.s||'p',t:n.innerText.replace(/\n$/,'')}); else if(n.nodeType===3&&n.textContent.trim()) out.push({s:'p',t:n.textContent}); });
+  (D(c).blocks=D(c).blocks||{})[host.dataset.blocks]=out.length?out:[{s:'p',t:''}]; H.save(); }
 let wired=false;
 function wire(c,helpers){
   H=helpers; if(wired) return; wired=true;
   const app=document.getElementById('app');
   app.addEventListener('input',e=>{ const t=e.target; if(!curSub()&&!location.hash.includes('templates')) return; const c=H.co();
     if(t.id==='tp-search'){ S.search=t.value; const caret=t.selectionStart; H.rerender(); const n=$('#tp-search'); if(n){ n.focus(); n.setSelectionRange(caret,caret); } return; }
+    if(t.dataset.ed){ const [r,p]=t.dataset.ed.split(':'); const v=t.innerText.replace(/\n$/,''); setp(rootObj(c,r),p,v); const fi=$('[data-f="'+t.dataset.ed+'"]'); if(fi) fi.value=v; H.save(); return; }
+    if(t.dataset.blocks!=null){ if(e.inputType==='insertParagraph'){ const sel=getSelection(), n=sel&&sel.anchorNode, el=n&&(n.nodeType===1?n:n.parentElement)?.closest('[data-s]'), pv=el&&el.previousElementSibling; if(el&&pv&&el.dataset.s!=='p'&&!el.innerText.replace(/\n$/,'')&&el.dataset.s===pv.dataset.s) el.dataset.s='p'; } saveBlocks(c,t); return; }
     if(!t.dataset.f) return; const [r,p]=t.dataset.f.split(':'); setp(objFor(c,r),p,t.value); H.save(); refresh(c); });
+  app.addEventListener('mousedown',e=>{ if(e.target.closest('[data-fmt]')) e.preventDefault(); });
+  app.addEventListener('paste',e=>{ const h=e.target.closest&&e.target.closest('[data-blocks],[data-ed]'); if(!h) return; e.preventDefault(); document.execCommand('insertText',false,(e.clipboardData||window.clipboardData).getData('text/plain')); });
   app.addEventListener('change',async e=>{ const t=e.target, c=H.co();
     if(t.dataset.chk){ const [r,p]=t.dataset.chk.split(':'); setp(objFor(c,r),p,t.checked); H.save(); refresh(c); }
     if(t.dataset.upload&&t.files[0]){ const url=await H.readImage(t.files[0],1400); (D(c).uploads=D(c).uploads||[]).push(url); const [r,p]=t.dataset.upload.split(':');
@@ -350,6 +379,9 @@ function wire(c,helpers){
     if(ds.slide!=null){ S.slide=+ds.slide; H.rerender(); return; }
     if(ds.sel!=null){ S.sel=+ds.sel; H.rerender(); return; }
     if(ds.start){ document.querySelectorAll('.start').forEach(b=>b.classList.toggle('on',b===t)); S.startMode=ds.start; return; }
+    if(ds.sheet){ S.sheet=ds.sheet; H.rerender(); return; }
+    if(ds.fmt){ const sel=getSelection(), n=sel&&sel.anchorNode, el=n&&(n.nodeType===1?n:n.parentElement)?.closest('[data-s]'); if(el&&el.closest('[data-blocks]')){ el.dataset.s=ds.fmt; saveBlocks(c,el.closest('[data-blocks]')); } return; }
+    if(ds.doc&&ds.doc.startsWith('reset:')){ const k=ds.doc.slice(6); if(D(c).blocks) delete D(c).blocks[k]; H.save(); H.rerender(); return; }
     if(ds.doc){ const [a,k]=ds.doc.split(':'); const html=pageHtml(c,sheet(c,k),c.name+' '+k);
       if(a==='open') openWin(html,false); else { H.toast('Building Word document…'); H.download(await docx(c,k),`${H.slug(c.name)}-${H.slug(SHEETS.find(s=>s[0]===k)[1])}.docx`); } return; }
     if(!ds.act) return; const [a,x,y]=ds.act.split(':');
