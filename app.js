@@ -226,16 +226,16 @@ function applyTheme(c){
 
 function header(c,page,sub,back){
   const tab=`<div class="logotab">${logoHtml(c,'symbol','black')}</div>`;
-  const fb=c.feedbackEmail?`mailto:${esc(c.feedbackEmail)}?subject=${encodeURIComponent(c.name+' portal feedback')}`:'#';
+  const fb=`<button class="hbtn" data-feedback>Feedback</button>`;
   if(page==='home') return `<header class="hdr"><div class="band"></div><div class="inner">
       <div class="hello">Good morning,<b>${esc(c.person)}.</b></div>
       <div class="ask"><input id="ask" placeholder="Ask me anything" aria-label="Ask me anything"></div>
-      <div class="hbtns"><a class="hbtn" href="${fb}">Feedback</a><button class="hbtn" id="signout">Sign out</button></div>
+      <div class="hbtns">${fb}<button class="hbtn" id="signout">Sign out</button></div>
     </div>${tab}</header>`;
   return `<header class="hdr brandhdr"><div class="band"></div><div class="inner">
       <div class="ptitle"><span class="tick"></span>${esc(page)}<small>${esc(sub||c.pageSubtitle)}</small></div>
       <div class="ask"><input id="ask" placeholder="Ask me anything" aria-label="Ask me anything"></div>
-      <div class="hbtns"><a class="hbtn" href="${fb}">Feedback</a><a class="hbtn" href="${back?esc(back.href):'#/'}">${back?esc(back.label):'Back to portal'}</a></div>
+      <div class="hbtns">${fb}<a class="hbtn" href="${back?esc(back.href):'#/'}">${back?esc(back.label):'Back to portal'}</a></div>
     </div>${tab}</header>`;
 }
 
@@ -381,7 +381,7 @@ const TA=(path,label)=>`<div class="fg"><label>${label}</label><textarea data-p=
 
 function drawerBody(c){
   switch(tab){
-  case 'company': return `<div class="h">Identity</div>${F('name','Company name')}${F('person','Greeting name (who is signed in)')}${F('tagline','Tagline')}${F('footerText','Footer line')}${F('pageSubtitle','Brand page subtitle')}${F('feedbackEmail','Feedback email','text')}
+  case 'company': return `<div class="h">Identity</div>${F('name','Company name')}${F('person','Greeting name (who is signed in)')}${F('tagline','Tagline')}${F('footerText','Footer line')}${F('pageSubtitle','Brand page subtitle')}${F('feedbackKey','Feedback access key (web3forms.com, delivers to your inbox)','text')}${F('feedbackEmail','Fallback feedback email','text')}
     <div class="h">Theme</div><div class="row">${Colour('theme.accent','Accent colour')}${Colour('theme.onAccent','Text on accent')}</div><div class="row">${Colour('theme.sky1','Background top')}${Colour('theme.sky2','Background bottom')}</div>
     <div class="h">Help tooltips</div>${['logo','colour','type','elements','imagery'].map(k=>TA('help.'+k,'“?” text — '+k)).join('')}`;
   case 'logo': return `<div class="h">Generated logo</div><p class="hint">The logo is drawn from these settings. Upload real artwork per slot below to replace it.</p>
@@ -454,6 +454,39 @@ drawer.addEventListener('click',e=>{
 const qs=new URLSearchParams(location.search).get('company');
 if(qs&&store.companies.some(c=>c.id===qs)) store.active=qs;
 app.addEventListener('click',onPageClick);
+
+/* ---- feedback box: sends the message to the owner's inbox via Web3Forms ---- */
+function openFeedback(){
+  const c=co(); document.getElementById('fbmodal')?.remove();
+  const m=document.createElement('div'); m.id='fbmodal'; m.className='fbm';
+  m.innerHTML=`<form class="fbbox" novalidate><button type="button" class="fbx" aria-label="Close">×</button>
+    <h3>Send feedback</h3><p>Tell us what works and what doesn’t. Your message goes straight to the ${esc(c.name)} team.</p>
+    <label>Your name <span>(optional)</span><input name="name" autocomplete="name"></label>
+    <label>Your email <span>(optional, if you want a reply)</span><input name="email" type="email" autocomplete="email"></label>
+    <label>Message<textarea name="message" rows="5" required placeholder="Write your feedback here"></textarea></label>
+    <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none">
+    <div class="fbrow"><span class="fbstat" role="status"></span><button class="hbtn fbsend" type="submit">Send</button></div></form>`;
+  document.body.appendChild(m);
+  const f=m.querySelector('form'), st=m.querySelector('.fbstat'), btn=m.querySelector('.fbsend'); const close=()=>m.remove();
+  m.addEventListener('click',e=>{ if(e.target===m||e.target.classList.contains('fbx')) close(); });
+  m.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+  f.message.focus();
+  f.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const msg=f.message.value.trim(); if(!msg){ st.textContent='Please write a message first.'; f.message.focus(); return; }
+    if(!c.feedbackKey){
+      if(c.feedbackEmail){ location.href=`mailto:${c.feedbackEmail}?subject=${encodeURIComponent(c.name+' portal feedback')}&body=${encodeURIComponent(msg)}`; return; }
+      st.textContent='Feedback delivery isn’t set up yet.'; return; }
+    btn.disabled=true; st.textContent='Sending…';
+    try{
+      const r=await fetch('https://api.web3forms.com/submit',{ method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'},
+        body:JSON.stringify({ access_key:c.feedbackKey, subject:c.name+' portal feedback', from_name:f.name.value.trim()||'Portal visitor', name:f.name.value.trim()||'Anonymous', email:f.email.value.trim()||undefined, message:msg, botcheck:f.botcheck.checked, page:location.href }) });
+      const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.message||'failed');
+      f.innerHTML='<button type="button" class="fbx" aria-label="Close">×</button><h3>Thank you</h3><p>Your feedback has been sent.</p><div class="fbrow"><span></span><button type="button" class="hbtn fbsend fbx">Close</button></div>';
+    }catch(err){ btn.disabled=false; st.textContent='Couldn’t send. Please try again in a moment.'; }
+  });
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-feedback]')) openFeedback(); });
 addEventListener('hashchange',()=>{ render.keepScroll=0; render(); });
 render();
 })();

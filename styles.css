@@ -195,3 +195,15 @@ a{color:inherit}
 .athumb{width:64px;height:48px;overflow:hidden;position:relative;background:#fff;border:1px solid var(--line);flex:none}.ascale{transform:scale(.11);transform-origin:0 0;width:600px;position:absolute}
 .ainfo{flex:1;min-width:0}.ainfo b{display:block;font:700 9px var(--heading-font);letter-spacing:.12em;text-transform:uppercase}.ainfo span{font-size:11px;color:var(--mute)}
 @media (max-width:860px){.tpcols.two,.tpcols.three,.tpcols.arch{grid-template-columns:1fr}}
+
+/* feedback box */
+.fbm{position:fixed;inset:0;background:rgba(10,14,10,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.fbbox{position:relative;background:#fff;color:#1b1f1b;width:min(480px,100%);border-radius:12px;padding:26px 26px 20px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit}
+.fbbox h3{margin:0 0 6px;font-size:22px}.fbbox p{margin:0 0 14px;color:#5b625b;font-size:14px;line-height:1.45}
+.fbbox label{display:block;font-size:13px;font-weight:600;margin:10px 0 0}.fbbox label span{font-weight:400;color:#7a817a}
+.fbbox input:not([type=checkbox]),.fbbox textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:9px 10px;border:1px solid #cfd3cd;border-radius:8px;font:inherit;font-size:14px;background:#fafaf8}
+.fbbox textarea{resize:vertical}.fbbox input:focus,.fbbox textarea:focus{outline:2px solid var(--accent,#1F2A1F);outline-offset:1px}
+.fbx{position:absolute;top:10px;right:12px;background:none;border:0;font-size:24px;line-height:1;cursor:pointer;color:#666}
+.fbrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}.fbstat{font-size:13px;color:#8a3b2b}
+.fbbox .fbsend{background:var(--accent,#1F2A1F);color:var(--onAccent,#ECE7DB);border:0;padding:9px 22px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;position:static}
+.fbbox .fbsend:disabled{opacity:.6;cursor:wait}
