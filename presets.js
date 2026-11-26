@@ -4,7 +4,7 @@
 (() => {
 const scene = (a,b,label) => 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="900" height="620" fill="url(#g)"/><circle cx="650" cy="170" r="110" fill="#fff" opacity=".1"/><path d="M0 520 Q260 430 480 505 T900 470 V620 H0Z" fill="#000" opacity=".2"/><text x="40" y="580" font-family="Arial" font-size="22" fill="#fff" opacity=".75" letter-spacing="4">${label}</text></svg>`);
 
-const PERSON = 'Sidhant Sridhar';
+const PERSON = 'Shalini Prakash';
 
 /* ---------------------------------------------------------------- Impact Sourcing */
 const IS_DONTS = ["Don't place the seal on busy imagery","Don't use bright colours, gradients or glossy effects","Don't set a headline in a sans-serif"];
